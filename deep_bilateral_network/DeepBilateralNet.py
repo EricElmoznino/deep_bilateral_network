@@ -6,19 +6,28 @@ import numpy as np
 
 class DeepBilateralNetCurves(nn.Module):
 
-    def __init__(self, lowres_resolution, luma_bins, spatial_bin, channel_multiplier):
+    def __init__(self, lowres_resolution, luma_bins, spatial_bin, channel_multiplier, n_in=3+1, n_out=3):
         super().__init__()
         self.luma_bins = luma_bins
         self.spatial_bin = spatial_bin
         self.channel_multiplier = channel_multiplier
         self.feature_multiplier = self.luma_bins * self.channel_multiplier
+        self.n_in, self.n_out = n_in, n_out
 
+        # coefficient model parameters
         self.splat = self.make_splat_features(lowres_resolution)
         self.global_conv, self.global_fc = self.make_global_features(self.splat[-1].shape[1])
         self.local = self.make_local_features(self.splat[-1].shape[1])
-        self.prediction = conv(8 * self.feature_multiplier, luma_bins * (3 + 1) * 3, 1, activation=False)
+        self.prediction = conv(8 * self.feature_multiplier, luma_bins * n_in * n_out, 1, activation=False)
+
+        # guide model parameters
+
+        # output model parameters
 
     def forward(self, lowres_image, fullres_image):
+        coefficients = self.forward_coefficients(lowres_image)
+
+    def forward_coefficients(self, lowres_image):
         splat_features = self.splat(lowres_image)
         global_features = self.global_conv(splat_features)
         global_features = global_features.view(lowres_image.shape[0], global_features.shape[1] * 4 * 4)
@@ -27,6 +36,9 @@ class DeepBilateralNetCurves(nn.Module):
         local_features = self.local(splat_features)
         fusion = F.relu(global_features + local_features)
         coefficients = self.prediction(fusion)
+        coefficients = torch.stack(torch.split(coefficients, self.luma_bins, dim=1), dim=2)
+        coefficients = torch.stack(torch.split(coefficients, self.n_out, dim=2), dim=3)
+        return coefficients
 
     def make_splat_features(self, lowres_resolution):
         splat_features = []
