@@ -2,12 +2,13 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 import numpy as np
+from models.util_layers import conv, fc
 
 
 class DeepBilateralNetCurves(nn.Module):
 
     def __init__(self, lowres_resolution, fullres_resolution,
-                 luma_bins, spatial_bin, channel_multiplier, n_in=3+1, n_out=3):
+                 luma_bins, spatial_bin, channel_multiplier, n_in=3 + 1, n_out=3):
         super().__init__()
         self.luma_bins = luma_bins
         self.spatial_bin = spatial_bin
@@ -16,6 +17,8 @@ class DeepBilateralNetCurves(nn.Module):
         self.n_in, self.n_out = n_in, n_out
 
         # coefficient model parameters
+        self.splat, self.global_conv, self.global_fc, self.local, self.prediction = \
+            self.make_coefficient_params(lowres_resolution)
         self.splat = self.make_splat_features(lowres_resolution)
         self.global_conv, self.global_fc = self.make_global_features(self.splat[-1].shape[1])
         self.local = self.make_local_features(self.splat[-1].shape[1])
@@ -41,49 +44,37 @@ class DeepBilateralNetCurves(nn.Module):
         coefficients = torch.stack(torch.split(coefficients, self.n_out, dim=2), dim=3)
         return coefficients
 
-    def make_splat_features(self, lowres_resolution):
-        splat_features = []
+    def make_coefficient_params(self, lowres_resolution):
+        # splat params
+        splat = []
         in_channels = self.n_in - 1
         for i in range(int(np.log2(lowres_resolution / self.spatial_bin))):
-            splat_features.append(conv(in_channels, (2 ** i) * self.feature_multiplier, 3, stride=2,
-                                       batch_norm=False if i == 0 else True))
+            splat.append(conv(in_channels, (2 ** i) * self.feature_multiplier, 3, stride=2,
+                              batch_norm=False if i == 0 else True))
             in_channels = (2 ** i) * self.feature_multiplier
-        splat_features = nn.Sequential(*splat_features)
-        return splat_features
+        splat = nn.Sequential(*splat)
+        splat_channels = self.splat[-1].shape[1]
 
-    def make_global_features(self, splat_channels):
-        conv_features = []
+        # global params
+        global_conv = []
         in_channels = splat_channels
         for _ in range(int(np.log2(self.spatial_bin / 4))):
-            conv_features.append(conv(in_channels, 8 * self.feature_multiplier, 3, stride=2))
+            global_conv.append(conv(in_channels, 8 * self.feature_multiplier, 3, stride=2))
             in_channels = 8 * self.feature_multiplier
-        conv_features = nn.Sequential(*conv_features)
-        fc_features = nn.Sequential(fc(128 * self.feature_multiplier, 32 * self.feature_multiplier),
-                                    fc(32 * self.feature_multiplier, 16 * self.feature_multiplier),
-                                    fc(16 * self.feature_multiplier, 8 * self.feature_multiplier, activation=False))
-        return conv_features, fc_features
+        global_conv = nn.Sequential(*global_conv)
+        global_fc = nn.Sequential(fc(128 * self.feature_multiplier, 32 * self.feature_multiplier),
+                                  fc(32 * self.feature_multiplier, 16 * self.feature_multiplier),
+                                  fc(16 * self.feature_multiplier, 8 * self.feature_multiplier, activation=False))
 
-    def make_local_features(self, splat_channels):
-        local_features = nn.Sequential(conv(splat_channels, 8 * self.feature_multiplier, 3),
-                                       conv(8 * self.feature_multiplier, 8 * self.feature_multiplier, 3,
-                                            bias=False, activation=False))
-        return local_features
+        # local params
+        local = nn.Sequential(conv(splat_channels, 8 * self.feature_multiplier, 3),
+                              conv(8 * self.feature_multiplier, 8 * self.feature_multiplier, 3,
+                                   bias=False, activation=False))
 
+        # prediction params
+        prediction = conv(8 * self.feature_multiplier, self.luma_bins * self.n_in * self.n_out, 1, activation=False)
 
-def conv(in_channels, out_channels, kernel, stride=1, batch_norm=True, bias=True, activation=True):
-    layers = [nn.Conv2d(in_channels, out_channels, kernel, stride=stride, padding=(kernel - 1) // 2, bias=bias)]
-    if batch_norm:
-        layers.append(nn.BatchNorm2d(out_channels))
-    if activation:
-        layers.append(nn.ReLU(inplace=True))
-    return nn.Sequential(*layers)
+        return splat, global_conv, global_fc, local, prediction
 
-
-def fc(in_features, out_features, batch_norm=True, activation=True):
-    layers = [nn.Linear(in_features, out_features)]
-    if batch_norm:
-        layers.append(nn.BatchNorm1d(out_features))
-    if activation:
-        layers.append(nn.ReLU(inplace=True))
-    return nn.Sequential(*layers)
-
+    def make_guide_params(self):
+        pass
