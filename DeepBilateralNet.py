@@ -6,7 +6,8 @@ import numpy as np
 
 class DeepBilateralNetCurves(nn.Module):
 
-    def __init__(self, lowres_resolution, luma_bins, spatial_bin, channel_multiplier, n_in=3+1, n_out=3):
+    def __init__(self, lowres_resolution, fullres_resolution,
+                 luma_bins, spatial_bin, channel_multiplier, n_in=3+1, n_out=3):
         super().__init__()
         self.luma_bins = luma_bins
         self.spatial_bin = spatial_bin
@@ -42,7 +43,7 @@ class DeepBilateralNetCurves(nn.Module):
 
     def make_splat_features(self, lowres_resolution):
         splat_features = []
-        in_channels = 3
+        in_channels = self.n_in - 1
         for i in range(int(np.log2(lowres_resolution / self.spatial_bin))):
             splat_features.append(conv(in_channels, (2 ** i) * self.feature_multiplier, 3, stride=2,
                                        batch_norm=False if i == 0 else True))
