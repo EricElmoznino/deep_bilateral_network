@@ -8,28 +8,26 @@ from models.util_layers import conv, fc
 class DeepBilateralNetCurves(nn.Module):
 
     def __init__(self, lowres_resolution, fullres_resolution,
-                 luma_bins, spatial_bin, channel_multiplier, n_in=3 + 1, n_out=3):
+                 luma_bins, spatial_bin, channel_multiplier, n_in=3, n_out=3):
         super().__init__()
         self.luma_bins = luma_bins
         self.spatial_bin = spatial_bin
         self.channel_multiplier = channel_multiplier
         self.feature_multiplier = self.luma_bins * self.channel_multiplier
-        self.n_in, self.n_out = n_in, n_out
+        self.n_in, self.n_out = n_in + 1, n_out
 
         # coefficient model parameters
         self.splat, self.global_conv, self.global_fc, self.local, self.prediction = \
             self.make_coefficient_params(lowres_resolution)
-        self.splat = self.make_splat_features(lowres_resolution)
-        self.global_conv, self.global_fc = self.make_global_features(self.splat[-1].shape[1])
-        self.local = self.make_local_features(self.splat[-1].shape[1])
-        self.prediction = conv(8 * self.feature_multiplier, luma_bins * n_in * n_out, 1, activation=False)
 
         # guide model parameters
+        self.ccm, self.shifts, self.slopes, self.projection = self.make_guide_params()
 
         # output model parameters
 
     def forward(self, lowres_image, fullres_image):
         coefficients = self.forward_coefficients(lowres_image)
+        guidemap = self.forward_guidemap(fullres_image)
 
     def forward_coefficients(self, lowres_image):
         splat_features = self.splat(lowres_image)
@@ -44,6 +42,15 @@ class DeepBilateralNetCurves(nn.Module):
         coefficients = torch.stack(torch.split(coefficients, self.n_out, dim=2), dim=3)
         return coefficients
 
+    def forward_guidemap(self, fullres_image):
+        guidemap = self.ccm(fullres_image)
+        guidemap = guidemap.unsqueeze(dim=4)
+        guidemap = (self.slopes * F.relu(guidemap - self.shifts)).sum(dim=4)
+        guidemap = self.projection(guidemap)
+        guidemap = guidemap.clamp(min=0, max=1)
+        guidemap = guidemap.squeeze(dim=1)
+        return guidemap
+
     def make_coefficient_params(self, lowres_resolution):
         # splat params
         splat = []
@@ -53,7 +60,7 @@ class DeepBilateralNetCurves(nn.Module):
                               batch_norm=False if i == 0 else True))
             in_channels = (2 ** i) * self.feature_multiplier
         splat = nn.Sequential(*splat)
-        splat_channels = self.splat[-1].shape[1]
+        splat_channels = in_channels
 
         # global params
         global_conv = []
@@ -77,4 +84,26 @@ class DeepBilateralNetCurves(nn.Module):
         return splat, global_conv, global_fc, local, prediction
 
     def make_guide_params(self):
-        pass
+        n_ctr_pts = 16
+        in_channels = self.n_in - 1
+
+        ccm = conv(in_channels, in_channels, 1, batch_norm=False, activation=False,
+                   weights_init=(np.identity(in_channels, dtype=np.float32) +
+                                 np.random.randn(1).astype(np.float32) * 1e-4)
+                   .reshape((in_channels, in_channels, 1, 1)),
+                   bias_init=torch.zeros(in_channels))
+
+        shifts = np.linspace(0, 1, n_ctr_pts, endpoint=False, dtype=np.float32)
+        shifts = shifts[np.newaxis, np.newaxis, np.newaxis, :]
+        shifts = np.tile(shifts, (in_channels, 1, 1, 1))
+        shifts = nn.Parameter(data=torch.from_numpy(shifts))
+
+        slopes = np.zeros([1, in_channels, 1, 1, n_ctr_pts], dtype=np.float32)
+        slopes[:, :, :, :, 0] = 1.0
+        slopes = nn.Parameter(data=torch.from_numpy(slopes))
+
+        projection = conv(in_channels, 1, 1, activation=False, batch_norm=False,
+                          weights_init=torch.ones(1, in_channels, 1, 1) / in_channels,
+                          bias_init=torch.zeros(1))
+
+        return ccm, shifts, slopes, projection
