@@ -14,7 +14,7 @@ class DeepBilateralNetCurves(nn.Module):
         self.channel_multiplier = channel_multiplier
         self.feature_multiplier = self.luma_bins * self.channel_multiplier
         self.guide_pts = guide_pts
-        self.n_in, self.n_out = n_in + 1, n_out
+        self.n_in, self.n_out = n_in, n_out
 
         self.splat, self.global_conv, self.global_fc, self.local, self.prediction = \
             self.make_coefficient_params(lowres)
@@ -35,8 +35,7 @@ class DeepBilateralNetCurves(nn.Module):
         local_features = self.local(splat_features)
         fusion = F.relu(global_features + local_features)
         coefficients = self.prediction(fusion)
-        coefficients = torch.stack(torch.split(coefficients, self.luma_bins, dim=1), dim=2)
-        coefficients = torch.stack(torch.split(coefficients, self.n_out, dim=2), dim=3)
+        coefficients = torch.stack(torch.split(coefficients, self.n_out*(self.n_in+1), dim=1), dim=2)
         return coefficients
 
     def forward_guidemap(self, image_fullres):
@@ -51,7 +50,7 @@ class DeepBilateralNetCurves(nn.Module):
     def make_coefficient_params(self, lowres):
         # splat params
         splat = []
-        in_channels = self.n_in - 1
+        in_channels = self.n_in
         for i in range(int(np.log2(min(lowres) / self.spatial_bin))):
             splat.append(conv(in_channels, (2 ** i) * self.feature_multiplier, 3, stride=2,
                               batch_norm=False if i == 0 else True))
@@ -76,30 +75,28 @@ class DeepBilateralNetCurves(nn.Module):
                                    bias=False, activation=False))
 
         # prediction params
-        prediction = conv(8 * self.feature_multiplier, self.luma_bins * self.n_in * self.n_out, 1, activation=False)
+        prediction = conv(8 * self.feature_multiplier, self.luma_bins * (self.n_in+1) * self.n_out, 1, activation=False)
 
         return splat, global_conv, global_fc, local, prediction
 
     def make_guide_params(self):
-        in_channels = self.n_in - 1
-
-        ccm = conv(in_channels, in_channels, 1, batch_norm=False, activation=False,
-                   weights_init=(np.identity(in_channels, dtype=np.float32) +
+        ccm = conv(self.n_in, self.n_in, 1, batch_norm=False, activation=False,
+                   weights_init=(np.identity(self.n_in, dtype=np.float32) +
                                  np.random.randn(1).astype(np.float32) * 1e-4)
-                   .reshape((in_channels, in_channels, 1, 1)),
-                   bias_init=torch.zeros(in_channels))
+                   .reshape((self.n_in, self.n_in, 1, 1)),
+                   bias_init=torch.zeros(self.n_in))
 
         shifts = np.linspace(0, 1, self.guide_pts, endpoint=False, dtype=np.float32)
         shifts = shifts[np.newaxis, np.newaxis, np.newaxis, :]
-        shifts = np.tile(shifts, (in_channels, 1, 1, 1))
+        shifts = np.tile(shifts, (self.n_in, 1, 1, 1))
         shifts = nn.Parameter(data=torch.from_numpy(shifts))
 
-        slopes = np.zeros([1, in_channels, 1, 1, self.guide_pts], dtype=np.float32)
+        slopes = np.zeros([1, self.n_in, 1, 1, self.guide_pts], dtype=np.float32)
         slopes[:, :, :, :, 0] = 1.0
         slopes = nn.Parameter(data=torch.from_numpy(slopes))
 
-        projection = conv(in_channels, 1, 1, activation=False, batch_norm=False,
-                          weights_init=torch.ones(1, in_channels, 1, 1) / in_channels,
+        projection = conv(self.n_in, 1, 1, activation=False, batch_norm=False,
+                          weights_init=torch.ones(1, self.n_in, 1, 1) / self.n_in,
                           bias_init=torch.zeros(1))
 
         return ccm, shifts, slopes, projection
