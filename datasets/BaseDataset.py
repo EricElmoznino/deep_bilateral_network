@@ -22,8 +22,8 @@ class BaseDataset(Dataset):
     def __getitem__(self, item):
         image, target = self.data[item]['image'], self.data[item]['target']
         image, target = Image.open(image).convert('RGB'), Image.open(target).convert('RGB')
-        image_fullres, imagre_lowres, target_fullres, target_lowres = self.transform(image, target)
-        return image, target
+        image_lowres, image_fullres, target = self.transform(image, target)
+        return image_lowres, image_fullres, target
 
     def transform(self, image, target):
         if self.training:
@@ -33,9 +33,10 @@ class BaseDataset(Dataset):
                                                   aspect_ratio=self.lowres[1]/self.fullres[1])
         else:
             image, target = tr_custom.center_crop([image, target], aspect_ratio=self.lowres[1]/self.fullres[1])
-        image_fullres, target_fullres = [tr.resize(img, self.fullres) for img in [image, target]]
-        images_lowres = tr.resize(image_fullres, self.lowres, interpolation=Image.NEAREST)
-        return image_fullres, images_lowres, target_fullres
+        image_fullres, target = [tr.resize(img, self.fullres) for img in [image, target]]
+        image_lowres = tr.resize(image_fullres, self.lowres, interpolation=Image.NEAREST)
+        image_lowres, image_fullres, target = [tr.to_tensor(img) for img in [image_lowres, image_fullres, target]]
+        return image_lowres, image_fullres, target
 
     def read_data(self, data_dir):
         data = os.listdir(data_dir)

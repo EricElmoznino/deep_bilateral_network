@@ -24,7 +24,7 @@ class DeepBilateralNetCurves(nn.Module):
         coefficients = self.forward_coefficients(image_lowres)
         guidemap = self.forward_guidemap(image_fullres)
         # todo: add bilateral slice layer
-        return torch.cat([guidemap, guidemap, guidemap], dim=1)
+        return torch.stack([guidemap, guidemap, guidemap], dim=1)
 
     def forward_coefficients(self, image_lowres):
         splat_features = self.splat(image_lowres)
@@ -52,7 +52,7 @@ class DeepBilateralNetCurves(nn.Module):
         # splat params
         splat = []
         in_channels = self.n_in - 1
-        for i in range(int(np.log2(lowres / self.spatial_bin))):
+        for i in range(int(np.log2(min(lowres) / self.spatial_bin))):
             splat.append(conv(in_channels, (2 ** i) * self.feature_multiplier, 3, stride=2,
                               batch_norm=False if i == 0 else True))
             in_channels = (2 ** i) * self.feature_multiplier
