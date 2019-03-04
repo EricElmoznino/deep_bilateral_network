@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import numpy as np
+import bilateral_slice
 
 
 def conv(in_channels, out_channels, kernel, stride=1, batch_norm=True, bias=True, activation=True,
@@ -29,3 +30,24 @@ def fc(in_features, out_features, batch_norm=True, activation=True):
     if activation:
         layers.append(nn.ReLU(inplace=True))
     return nn.Sequential(*layers)
+
+
+class BilateralSliceFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, bilateral_grid, guide, input, has_offset):
+        ctx.save_for_backward(bilateral_grid, guide, input, has_offset)
+        return bilateral_slice.forward(bilateral_grid, guide, input, has_offset)
+
+    @staticmethod
+    def backward(ctx, grad):
+        bilateral_grid, guide, input, has_offset = ctx.saved_variables
+        return bilateral_slice.backward(grad, bilateral_grid, guide, input, has_offset)
+
+
+class BilateralSlice(torch.nn.Module):
+    def __init__(self, has_offset):
+        super().__init__()
+        self.has_offset = has_offset
+
+    def forward(self, bilateral_grid, guide, input):
+        return BilateralSliceFunction(bilateral_grid, guide, input, self.has_offset)
