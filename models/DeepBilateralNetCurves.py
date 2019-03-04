@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 import numpy as np
-from models.layers import conv, fc
+from models.layers import conv, fc, BilateralSliceFunction
 
 
 class DeepBilateralNetCurves(nn.Module):
@@ -23,8 +23,8 @@ class DeepBilateralNetCurves(nn.Module):
     def forward(self, image_lowres, image_fullres):
         coefficients = self.forward_coefficients(image_lowres)
         guidemap = self.forward_guidemap(image_fullres)
-        # todo: add bilateral slice layer
-        return torch.stack([guidemap, guidemap, guidemap], dim=1)
+        output = BilateralSliceFunction(coefficients, guidemap, image_fullres, True)
+        return output
 
     def forward_coefficients(self, image_lowres):
         splat_features = self.splat(image_lowres)
