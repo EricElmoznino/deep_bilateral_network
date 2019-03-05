@@ -74,6 +74,11 @@ bilateral_slice_cuda_forward_kernel(scalar_t * __restrict__ output,
         int coeff_stride = input_chans;
         int grid_chans = input_chans*output_chans;
 
+        if (has_offset) {
+                grid_chans += output_chans;
+                coeff_stride += 1;
+        }
+
         for (int idx = blockIdx.x*blockDim.x + threadIdx.x;
              idx < total_count;
              idx += blockDim.x*gridDim.x) {
