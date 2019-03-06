@@ -16,7 +16,7 @@ bilateral_slice_cuda_forward(at::Tensor output_tensor,
                              GridSizes& gsz,
                              bool has_offset);
 
-at::Tensor
+std::vector<at::Tensor>
 bilateral_slice_cuda_backward(at::Tensor grid_grad,
                               at::Tensor guide_grad,
                               at::Tensor input_grad,
@@ -88,7 +88,7 @@ bilateral_slice_forward(at::Tensor bilateral_grid,
                                             has_offset);
 }
 
-at::Tensor
+std::vector<at::Tensor>
 bilateral_slice_backward(at::Tensor upstream_grad,
                          at::Tensor bilateral_grid,
                          at::Tensor guide,

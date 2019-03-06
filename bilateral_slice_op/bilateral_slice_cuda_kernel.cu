@@ -264,7 +264,7 @@ bilateral_slice_cuda_guide_grad_kernel(scalar_t * __restrict__ out_guide_grad,
         int grid_chans = input_chans*output_chans;
         int coeff_stride = input_chans;
 
-        if(has_offset) {
+        if (has_offset) {
                 grid_chans += output_chans;
                 coeff_stride += 1;
         }
@@ -454,7 +454,7 @@ bilateral_slice_cuda_forward(at::Tensor output_tensor,
         return output_tensor;
 }
 
-at::Tensor
+std::vector<at::Tensor>
 bilateral_slice_cuda_backward(at::Tensor grid_grad,
                               at::Tensor guide_grad,
                               at::Tensor input_grad,
@@ -533,5 +533,5 @@ bilateral_slice_cuda_backward(at::Tensor grid_grad,
                          output_chans);
                  }));
 
-        return input;
+        return {grid_grad, guide_grad, input_grad};
 }
