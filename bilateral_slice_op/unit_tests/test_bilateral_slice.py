@@ -7,9 +7,9 @@ import numpy as np
 class BilateralSliceTests(unittest.TestCase):
 
     def test_bilateral_slice(self):
-        grid = np.load('grid.npy')
-        guide = np.load('guide.npy')
-        input = np.load('input.npy')
+        grid = torch.from_numpy(np.load('grid.npy'))
+        guide = torch.from_numpy(np.load('guide.npy'))
+        input = torch.from_numpy(np.load('input.npy'))
 
         pytorch_output = bilateral_slice_cuda.forward(grid, guide, input, True).cpu().numpy()
         pytorch_output_no_offset = bilateral_slice_cuda.forward(grid, guide, input, False).cpu().numpy()
