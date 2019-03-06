@@ -7,17 +7,12 @@ import numpy as np
 class BilateralSliceTests(unittest.TestCase):
 
     def test_bilateral_slice(self):
-        batch_size = 3
-        grid_shape = [batch_size, 12, 8, 10, 6]
-        guide_shape = [batch_size, 101, 60]
-        input_shape = [batch_size, 3, 101, 60]
+        grid = np.load('grid.npy')
+        guide = np.load('guide.npy')
+        input = np.load('input.npy')
 
-        grid = torch.ones(grid_shape).cuda() * 0.1
-        guide = torch.ones(guide_shape).cuda() * 0.1
-        img = torch.ones(input_shape).cuda() * 0.1
-
-        pytorch_output = bilateral_slice_cuda.forward(grid, guide, img, True).cpu().numpy()
-        pytorch_output_no_offset = bilateral_slice_cuda.forward(grid, guide, img, False).cpu().numpy()
+        pytorch_output = bilateral_slice_cuda.forward(grid, guide, input, True).cpu().numpy()
+        pytorch_output_no_offset = bilateral_slice_cuda.forward(grid, guide, input, False).cpu().numpy()
 
         tf_output = np.load('tf_output.npy').transpose([0, 3, 1, 2])
         tf_output_no_offset = np.load('tf_output_no_offset.npy').transpose([0, 3, 1, 2])
