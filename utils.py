@@ -12,24 +12,24 @@ def step_num(epoch, batch, dataloader):
     return (epoch - 1) * len(dataloader) + batch
 
 
-def update_metrics(running_losses, losses, scale):
-    if running_losses is None:
-        running_losses = {l: 0 for l in losses}
-    for l in losses:
-        running_losses[l] += losses[l] / scale
-    return running_losses
+def update_metrics(running_metrics, metrics, scale):
+    if running_metrics is None:
+        running_metrics = {l: 0 for l in metrics}
+    for l in metrics:
+        running_metrics[l] += metrics[l] / scale
+    return running_metrics
 
 
-def print_metrics(running_losses, step, n_steps):
+def print_metrics(running_metrics, step, n_steps):
     print('Step [%d / %d]' % (step, n_steps))
-    for loss_name, loss in running_losses.items():
+    for loss_name, loss in running_metrics.items():
         print('%s: %.5f' % (loss_name, loss))
     print('')
 
 
-def log_to_tensorboard(writer, running_losses, step, log_prefix='training'):
+def log_to_tensorboard(writer, running_metrics, step, log_prefix='training'):
     location = log_prefix + '/'
-    for loss_name, loss in running_losses.items():
+    for loss_name, loss in running_metrics.items():
         writer.add_scalar(location + loss_name, loss, step)
 
 
