@@ -16,9 +16,8 @@ class DeepBilateralNetCurves(nn.Module):
         self.guide_pts = guide_pts
         self.n_in, self.n_out = n_in, n_out
 
-        self.splat, self.global_conv, self.global_fc, self.local, self.prediction = \
-            self.make_coefficient_params(lowres)
-        self.ccm, self.shifts, self.slopes, self.projection = self.make_guide_params()
+        self.coefficient_params = nn.ModuleList(self.make_coefficient_params(lowres))
+        self.guide_params = nn.ModuleList(self.make_guide_params())
 
     def forward(self, image_lowres, image_fullres):
         coefficients = self.forward_coefficients(image_lowres)
@@ -27,22 +26,24 @@ class DeepBilateralNetCurves(nn.Module):
         return output
 
     def forward_coefficients(self, image_lowres):
-        splat_features = self.splat(image_lowres)
-        global_features = self.global_conv(splat_features)
+        splat, global_conv, global_fc, local, prediction = self.coefficient_params
+        splat_features = splat(image_lowres)
+        global_features = global_conv(splat_features)
         global_features = global_features.view(image_lowres.shape[0], global_features.shape[1] * 4 * 4)
-        global_features = self.global_fc(global_features)
+        global_features = global_fc(global_features)
         global_features = global_features.view(image_lowres.shape[0], global_features.shape[1], 1, 1)
-        local_features = self.local(splat_features)
+        local_features = local(splat_features)
         fusion = F.relu(global_features + local_features)
-        coefficients = self.prediction(fusion)
+        coefficients = prediction(fusion)
         coefficients = torch.stack(torch.split(coefficients, self.n_out*(self.n_in+1), dim=1), dim=2)
         return coefficients
 
     def forward_guidemap(self, image_fullres):
-        guidemap = self.ccm(image_fullres)
+        ccm, shifts, slopes, projection = self.guide_params
+        guidemap = ccm(image_fullres)
         guidemap = guidemap.unsqueeze(dim=4)
-        guidemap = (self.slopes * F.relu(guidemap - self.shifts)).sum(dim=4)
-        guidemap = self.projection(guidemap)
+        guidemap = (slopes * F.relu(guidemap - shifts)).sum(dim=4)
+        guidemap = projection(guidemap)
         guidemap = guidemap.clamp(min=0, max=1)
         guidemap = guidemap.squeeze(dim=1)
         return guidemap
