@@ -3,13 +3,14 @@ from torch import optim
 from torch.utils.data import DataLoader
 import os
 from models.DeepBilateralNetCurves import DeepBilateralNetCurves
+from models.DeepBilateralNetPointwiseNNGuide import DeepBilateralNetPointwiseNNGuide
 from datasets.BaseDataset import BaseDataset
 import utils
 
 # Class choice parameters
-model_class = 'Curves'
+model_class = 'NN'
 dataset_class = 'Base'
-data_dir = 'data/debug'
+data_dir = 'data/eboye'
 pretrained_path = None
 
 # Model parameters
@@ -22,7 +23,7 @@ guide_pts = 16
 
 # Training parameters
 n_epochs = 100
-batch_size = 16
+batch_size = 4
 lr = 1e-4
 
 
@@ -47,6 +48,8 @@ def get_dataloaders():
 def get_model():
     if model_class == 'Curves':
         model = DeepBilateralNetCurves(lowres, luma_bins, spatial_bins, channel_multiplier, guide_pts)
+    elif model_class == 'NN':
+        model = DeepBilateralNetPointwiseNNGuide(lowres, luma_bins, spatial_bins, channel_multiplier, guide_pts)
     else:
         raise NotImplementedError()
     if torch.cuda.is_available():
