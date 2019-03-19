@@ -40,7 +40,7 @@ def get_dataloaders():
         test_set = BaseDataset(os.path.join(data_dir, 'test'), lowres, fullres)
     else:
         raise NotImplementedError()
-    train_loader = DataLoader(train_set, batch_size=batch_size, num_workers=2, shuffle=True)
+    train_loader = DataLoader(train_set, batch_size=batch_size, num_workers=2, shuffle=True, drop_last=True)
     test_loader = DataLoader(test_set, batch_size=batch_size, num_workers=2)
     return train_loader, test_loader
 
