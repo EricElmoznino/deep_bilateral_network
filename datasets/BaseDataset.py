@@ -30,9 +30,9 @@ class BaseDataset(Dataset):
             image, target = tr_custom.random_horizontal_flip([image, target])
             image, target = tr_custom.random_rotation([image, target], angle=15)
             image, target = tr_custom.random_crop([image, target], scale=(0.8, 1.0),
-                                                  aspect_ratio=self.lowres[1]/self.fullres[1])
+                                                  aspect_ratio=self.fullres[1]/self.fullres[0])
         else:
-            image, target = tr_custom.center_crop([image, target], aspect_ratio=self.lowres[1]/self.fullres[1])
+            image, target = tr_custom.center_crop([image, target], aspect_ratio=self.fullres[1]/self.fullres[0])
         image_fullres, target = [tr.resize(img, self.fullres) for img in [image, target]]
         image_lowres = tr.resize(image_fullres, self.lowres, interpolation=Image.NEAREST)
         image_lowres, image_fullres, target = [tr.to_tensor(img) for img in [image_lowres, image_fullres, target]]
