@@ -22,7 +22,7 @@ class DeepBilateralNetCurves(nn.Module):
     def forward(self, image_lowres, image_fullres):
         coefficients = self.forward_coefficients(image_lowres)
         guidemap = self.forward_guidemap(image_fullres)
-        output = BilateralSliceFunction(coefficients, guidemap, image_fullres, True)
+        output = BilateralSliceFunction.appy(coefficients, guidemap, image_fullres, True)
         return output
 
     def forward_coefficients(self, image_lowres):
