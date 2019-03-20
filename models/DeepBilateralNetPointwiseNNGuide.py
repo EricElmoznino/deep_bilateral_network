@@ -6,9 +6,8 @@ from models.DeepBilateralNetCurves import DeepBilateralNetCurves
 class DeepBilateralNetPointwiseNNGuide(DeepBilateralNetCurves):
 
     def forward_guidemap(self, image_fullres):
-        conv1, conv2 = self.guide_params
-        guidemap = conv1(image_fullres)
-        guidemap = conv2(guidemap)
+        guidemap = self.guide_params.conv1(image_fullres)
+        guidemap = self.guide_params.conv2(guidemap)
         guidemap = guidemap.squeeze(dim=1)
         return guidemap
 
@@ -17,4 +16,7 @@ class DeepBilateralNetPointwiseNNGuide(DeepBilateralNetCurves):
         conv2 = nn.Sequential(nn.Conv2d(self.guide_pts, 1, 1),
                               nn.BatchNorm2d(1),
                               nn.Sigmoid())
-        return conv1, conv2
+        guide_params = nn.Module()
+        guide_params.conv1 = conv1
+        guide_params.conv2 = conv2
+        return guide_params

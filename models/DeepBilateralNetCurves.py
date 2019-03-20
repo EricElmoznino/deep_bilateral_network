@@ -16,8 +16,8 @@ class DeepBilateralNetCurves(nn.Module):
         self.guide_pts = guide_pts
         self.n_in, self.n_out = n_in, n_out
 
-        self.coefficient_params = nn.ModuleList(self.make_coefficient_params(lowres))
-        self.guide_params = nn.ModuleList(self.make_guide_params())
+        self.coefficient_params = self.make_coefficient_params(lowres)
+        self.guide_params = self.make_guide_params()
 
     def forward(self, image_lowres, image_fullres):
         coefficients = self.forward_coefficients(image_lowres)
@@ -26,24 +26,22 @@ class DeepBilateralNetCurves(nn.Module):
         return output
 
     def forward_coefficients(self, image_lowres):
-        splat, global_conv, global_fc, local, prediction = self.coefficient_params
-        splat_features = splat(image_lowres)
-        global_features = global_conv(splat_features)
+        splat_features = self.coefficient_params.splat(image_lowres)
+        global_features = self.coefficient_params.global_conv(splat_features)
         global_features = global_features.view(image_lowres.shape[0], global_features.shape[1] * 4 * 4)
-        global_features = global_fc(global_features)
+        global_features = self.coefficient_params.global_fc(global_features)
         global_features = global_features.view(image_lowres.shape[0], global_features.shape[1], 1, 1)
-        local_features = local(splat_features)
+        local_features = self.coefficient_params.local(splat_features)
         fusion = F.relu(global_features + local_features)
-        coefficients = prediction(fusion)
+        coefficients = self.coefficient_params.prediction(fusion)
         coefficients = torch.stack(torch.split(coefficients, self.n_out*(self.n_in+1), dim=1), dim=2)
         return coefficients
 
     def forward_guidemap(self, image_fullres):
-        ccm, shifts, slopes, projection = self.guide_params
-        guidemap = ccm(image_fullres)
+        guidemap = self.guide_params.ccm(image_fullres)
         guidemap = guidemap.unsqueeze(dim=4)
-        guidemap = (slopes * F.relu(guidemap - shifts)).sum(dim=4)
-        guidemap = projection(guidemap)
+        guidemap = (self.guide_params.slopes * F.relu(guidemap - self.guide_params.shifts)).sum(dim=4)
+        guidemap = self.guide_params.projection(guidemap)
         guidemap = guidemap.clamp(min=0, max=1)
         guidemap = guidemap.squeeze(dim=1)
         return guidemap
@@ -78,7 +76,13 @@ class DeepBilateralNetCurves(nn.Module):
         # prediction params
         prediction = conv(8 * self.feature_multiplier, self.luma_bins * (self.n_in+1) * self.n_out, 1, activation=False)
 
-        return splat, global_conv, global_fc, local, prediction
+        coefficient_params = nn.Module()
+        coefficient_params.splat = splat
+        coefficient_params.global_conv = global_conv
+        coefficient_params.global_fc = global_fc
+        coefficient_params.local = local
+        coefficient_params.prediction = prediction
+        return coefficient_params
 
     def make_guide_params(self):
         ccm = conv(self.n_in, self.n_in, 1, batch_norm=False, activation=False,
@@ -100,4 +104,9 @@ class DeepBilateralNetCurves(nn.Module):
                           weights_init=torch.ones(1, self.n_in, 1, 1) / self.n_in,
                           bias_init=torch.zeros(1))
 
-        return ccm, shifts, slopes, projection
+        guide_params = nn.Module()
+        guide_params.ccm = ccm
+        guide_params.shifts = shifts
+        guide_params.slopes = slopes
+        guide_params.projection = projection
+        return guide_params
