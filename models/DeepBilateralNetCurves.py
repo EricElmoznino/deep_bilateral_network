@@ -62,7 +62,7 @@ class DeepBilateralNetCurves(nn.Module):
         global_conv = []
         in_channels = splat_channels
         for _ in range(int(np.log2(self.spatial_bin / 4))):
-            global_conv.append(conv(in_channels, 8 * self.feature_multiplier, 3, stride=2, norm=self.norm_fn))
+            global_conv.append(conv(in_channels, 8 * self.feature_multiplier, 3, stride=2, norm=self.norm))
             in_channels = 8 * self.feature_multiplier
         global_conv = nn.Sequential(*global_conv)
         global_fc = nn.Sequential(fc(128 * self.feature_multiplier, 32 * self.feature_multiplier, norm=self.norm),
