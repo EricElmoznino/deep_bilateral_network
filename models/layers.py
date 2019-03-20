@@ -4,7 +4,7 @@ import numpy as np
 import bilateral_slice_cuda
 
 
-def conv(in_channels, out_channels, kernel, stride=1, batch_norm=True, bias=True, activation=True,
+def conv(in_channels, out_channels, kernel, stride=1, norm=False, bias=True, relu=True,
          weights_init=None, bias_init=None):
     layers = [nn.Conv2d(in_channels, out_channels, kernel, stride=stride, padding=(kernel - 1) // 2, bias=bias)]
     assert not (bias_init is not None and not bias)
@@ -16,18 +16,18 @@ def conv(in_channels, out_channels, kernel, stride=1, batch_norm=True, bias=True
         if isinstance(bias_init, np.ndarray):
             bias_init = torch.from_numpy(bias_init)
         layers[0].bias.data = bias_init
-    if batch_norm:
+    if norm:
         layers.append(nn.BatchNorm2d(out_channels))
-    if activation:
+    if relu:
         layers.append(nn.ReLU(inplace=True))
     return nn.Sequential(*layers)
 
 
-def fc(in_features, out_features, batch_norm=True, activation=True):
+def fc(in_features, out_features, norm=False, relu=True):
     layers = [nn.Linear(in_features, out_features)]
-    if batch_norm:
+    if norm:
         layers.append(nn.BatchNorm1d(out_features))
-    if activation:
+    if relu:
         layers.append(nn.ReLU(inplace=True))
     return nn.Sequential(*layers)
 
