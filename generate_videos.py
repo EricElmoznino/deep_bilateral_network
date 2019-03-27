@@ -11,7 +11,8 @@ import os
 
 import configuration as conf
 
-input_video_paths = ['video_tests/input/Suji.MOV', 'video_tests/input/Vicky_1.MOV', 'video_tests/input/Vicky_2.MOV']
+input_video_paths = ['video_tests/input/Suji.MOV', 'video_tests/input/Vicky_1.MOV', 'video_tests/input/Vicky_2.MOV',
+                     'video_tests/input/Vicky_3.MOV']
 output_dir = 'video_tests/output'
 
 _, _, _, model, _, _ = conf.params()

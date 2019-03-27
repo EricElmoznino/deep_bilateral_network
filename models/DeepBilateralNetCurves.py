@@ -24,7 +24,7 @@ class DeepBilateralNetCurves(nn.Module):
         coefficients = self.forward_coefficients(image_lowres)
         guidemap = self.forward_guidemap(image_fullres)
         output = BilateralSliceFunction.apply(coefficients, guidemap, image_fullres, True)
-        return output
+        return F.hardtanh(output)
 
     def forward_coefficients(self, image_lowres):
         splat_features = self.coefficient_params.splat(image_lowres)
