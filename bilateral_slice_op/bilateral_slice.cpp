@@ -6,7 +6,31 @@
 #define CHECK_CUDA(x) AT_CHECK(x.type().is_cuda(), #x " must be a CUDA tensor")
 #define CHECK_CONTIGUOUS(x) AT_CHECK(x.is_contiguous(), #x " must be contiguous")
 #define CHECK_DIM(x, n) AT_CHECK(x.ndimension() == n, #x " must be " #n "D")
+
+#ifdef BISLICE_CUDA
 #define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
+#else
+#define CHECK_INPUT(x) CHECK_CONTIGUOUS(x)
+#endif /* BISLICE_CUDA */
+
+at::Tensor
+bilateral_slice_cpu_forward(at::Tensor output_tensor,
+                            at::Tensor bilateral_grid,
+                            at::Tensor guide,
+                            at::Tensor input,
+                            GridSizes& gsz,
+                            bool has_offset);
+
+std::vector<at::Tensor>
+bilateral_slice_cpu_backward(at::Tensor grid_grad,
+                             at::Tensor guide_grad,
+                             at::Tensor input_grad,
+                             at::Tensor upstream_grad,
+                             at::Tensor bilateral_grid,
+                             at::Tensor guide,
+                             at::Tensor input,
+                             GridSizes& gsz,
+                             bool has_offset);
 
 at::Tensor
 bilateral_slice_cuda_forward(at::Tensor output_tensor,
@@ -80,12 +104,21 @@ bilateral_slice_forward(at::Tensor bilateral_grid,
         at::Tensor output_tensor = at::empty({bs, output_chans, h, w},
                                              input.options());
 
+#ifdef BISLICE_CUDA
         return bilateral_slice_cuda_forward(output_tensor,
                                             bilateral_grid,
                                             guide,
                                             input,
                                             grid_sizes,
                                             has_offset);
+#else
+        return bilateral_slice_cpu_forward(output_tensor,
+                                           bilateral_grid,
+                                           guide,
+                                           input,
+                                           grid_sizes,
+                                           has_offset);
+#endif /* BISLICE_CUDA */
 }
 
 std::vector<at::Tensor>
@@ -121,6 +154,7 @@ bilateral_slice_backward(at::Tensor upstream_grad,
                              .gw = bilateral_grid.sizes()[4],
                              .input_chans = input.sizes()[1]};
 
+#ifdef BISLICE_CUDA
         return bilateral_slice_cuda_backward(grid_grad,
                                              guide_grad,
                                              input_grad,
@@ -130,6 +164,17 @@ bilateral_slice_backward(at::Tensor upstream_grad,
                                              input,
                                              grid_sizes,
                                              has_offset);
+#else
+        return bilateral_slice_cpu_backward(grid_grad,
+                                            guide_grad,
+                                            input_grad,
+                                            upstream_grad,
+                                            bilateral_grid,
+                                            guide,
+                                            input,
+                                            grid_sizes,
+                                            has_offset);
+#endif /* BISLICE_CUDA */
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {

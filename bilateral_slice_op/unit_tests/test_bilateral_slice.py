@@ -1,18 +1,22 @@
 import unittest
 import torch
-import bilateral_slice_cuda
+import bilateral_slice
 import numpy as np
 
 
 class BilateralSliceTests(unittest.TestCase):
 
     def test_bilateral_slice(self):
-        grid = torch.from_numpy(np.load('grid.npy')).cuda()
-        guide = torch.from_numpy(np.load('guide.npy')).cuda()
-        input = torch.from_numpy(np.load('input.npy')).cuda()
+        grid = torch.from_numpy(np.load('grid.npy'))
+        guide = torch.from_numpy(np.load('guide.npy'))
+        input = torch.from_numpy(np.load('input.npy'))
+        if torch.cuda.is_available():
+            grid = grid.cuda()
+            guide = guide.cuda()
+            input = input.cuda()
 
-        pytorch_output = bilateral_slice_cuda.forward(grid, guide, input, True).cpu().numpy()
-        pytorch_output_no_offset = bilateral_slice_cuda.forward(grid, guide, input, False).cpu().numpy()
+        pytorch_output = bilateral_slice.forward(grid, guide, input, True).cpu().numpy()
+        pytorch_output_no_offset = bilateral_slice.forward(grid, guide, input, False).cpu().numpy()
 
         tf_output = np.load('tf_output.npy').transpose([0, 3, 1, 2])
         tf_output_no_offset = np.load('tf_output_no_offset.npy').transpose([0, 3, 1, 2])
@@ -25,6 +29,8 @@ class BilateralSliceTests(unittest.TestCase):
         difference = np.absolute(pytorch_output - tf_output)
         difference_no_offset = np.absolute(pytorch_output_no_offset - tf_output_no_offset)
 
+        print('max abs:', np.absolute(tf_output).max())
+        print('mean abs:', np.absolute(tf_output).mean())
         print('max difference:', difference.max())
         print('mean difference:', difference.mean())
         print('max difference_no_offset:', difference_no_offset.max())

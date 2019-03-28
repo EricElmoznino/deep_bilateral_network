@@ -17,7 +17,9 @@ def test_grad():
 
     variables = [grid, guide, img]
     for i, var in enumerate(variables):
-        var = var.cuda().double()
+        var = var.double()
+        if torch.cuda.is_available():
+            var = var.cuda()
         var.requires_grad = True
         variables[i] = var
     if torch.autograd.gradcheck(bilateral_slice_offset, variables, eps=1e-3, atol=1e-2):
