@@ -10,7 +10,7 @@ import utils
 # Class choice parameters
 model_class = 'Curves'
 dataset_class = 'Base'
-data_dir = 'data/hair_gan'
+data_dir = 'data/debug'
 pretrained_path = None
 
 # Model parameters
