@@ -31,7 +31,7 @@ class DeepBilateralNetCurves(nn.Module):
     def forward_coefficients(self, image_lowres):
         splat_features = self.coefficient_params.splat(image_lowres)
         global_features = self.coefficient_params.global_conv(splat_features)
-        global_features = global_features.view(image_lowres.shape[0], global_features.shape[1] * 4 * 4)
+        global_features = global_features.view(image_lowres.shape[0], -1)
         global_features = self.coefficient_params.global_fc(global_features)
         global_features = global_features.view(image_lowres.shape[0], global_features.shape[1], 1, 1)
         local_features = self.coefficient_params.local(splat_features)
@@ -66,6 +66,7 @@ class DeepBilateralNetCurves(nn.Module):
         for _ in range(int(np.log2(self.spatial_bin / 4))):
             global_conv.append(conv(in_channels, 8 * self.feature_multiplier, 3, stride=2, norm=self.norm))
             in_channels = 8 * self.feature_multiplier
+        global_conv.append(nn.AdaptiveAvgPool2d(4))
         global_conv = nn.Sequential(*global_conv)
         global_fc = nn.Sequential(fc(128 * self.feature_multiplier, 32 * self.feature_multiplier, norm=self.norm),
                                   fc(32 * self.feature_multiplier, 16 * self.feature_multiplier, norm=self.norm),
