@@ -45,7 +45,7 @@ class DeepBilateralNetCurves(nn.Module):
         guidemap = guidemap.unsqueeze(dim=4)
         guidemap = (self.guide_params.slopes * F.relu(guidemap - self.guide_params.shifts)).sum(dim=4)
         guidemap = self.guide_params.projection(guidemap)
-        guidemap = guidemap.clamp(min=0, max=1)
+        guidemap = F.hardtanh(guidemap, min_val=0, max_val=1)
         guidemap = guidemap.squeeze(dim=1)
         return guidemap
 
