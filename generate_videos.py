@@ -53,9 +53,9 @@ for input_video, output_video in zip(input_video_paths, output_video_paths):
         output_frame = output_frame.squeeze(0).cpu()
         avg_time_per_frame += (end_time - start_time) / len(input_video)
 
-        output_frame = tr.resize(output_frame, [conf.fullres, int(conf.fullres * conf.aspect_ratio)],
-                                 interpolation=Image.BICUBIC)
         output_frame = tr.to_pil_image(output_frame)
+        output_frame = tr.resize(output_frame, [int(conf.fullres * conf.aspect_ratio), conf.fullres],
+                                 interpolation=Image.BICUBIC)
         output_frame = np.asarray(output_frame)
         output_frame = cv2.cvtColor(output_frame, cv2.COLOR_RGB2BGR)
         output_video.write(output_frame)
