@@ -14,8 +14,9 @@ data_dir = 'data/debug'
 pretrained_path = None
 
 # Model parameters
-lowres = [256, 512]
-fullres = [512, 1024]
+lowres = 256
+fullres = 512
+aspect_ratio = 2.0
 luma_bins = 8
 spatial_bins = 16
 channel_multiplier = 1
@@ -36,8 +37,8 @@ def params():
 
 def get_dataloaders():
     if dataset_class == 'Base':
-        train_set = BaseDataset(os.path.join(data_dir, 'train'), lowres, fullres, training=True)
-        test_set = BaseDataset(os.path.join(data_dir, 'test'), lowres, fullres)
+        train_set = BaseDataset(os.path.join(data_dir, 'train'), lowres, fullres, aspect_ratio, training=True)
+        test_set = BaseDataset(os.path.join(data_dir, 'test'), lowres, fullres, aspect_ratio)
     else:
         raise NotImplementedError()
     train_loader = DataLoader(train_set, batch_size=batch_size, num_workers=2, shuffle=True, drop_last=True)

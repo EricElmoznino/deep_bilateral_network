@@ -25,7 +25,7 @@ for input_video, output_video in zip(input_video_paths, output_video_paths):
     fr = cv2.VideoCapture(input_video).get(cv2.CAP_PROP_FPS)
     input_video = skvideo.io.vread(input_video)
     output_video = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'mp4v'), fr,
-                                   (conf.fullres[1], conf.fullres[0]))
+                                   (conf.fullres, int(conf.fullres * conf.aspect_ratio)))
 
     avg_time_per_frame = 0
     for input_frame in tqdm(input_video):
@@ -33,9 +33,9 @@ for input_video, output_video in zip(input_video_paths, output_video_paths):
             break
 
         input_frame = Image.fromarray(input_frame)
-        input_frame = tr_custom.center_crop([input_frame], aspect_ratio=conf.fullres[1]/conf.fullres[0])[0]
-        input_frame_fullres = tr.resize(input_frame, conf.fullres)
-        input_frame_lowres = tr.resize(input_frame_fullres, conf.lowres, interpolation=Image.NEAREST)
+        input_frame = tr_custom.center_crop([input_frame], aspect_ratio=conf.aspect_ratio)[0]
+        input_frame_fullres = tr.resize(input_frame, [conf.fullres, conf.fullres])
+        input_frame_lowres = tr.resize(input_frame_fullres, [conf.lowres, conf.lowres], interpolation=Image.NEAREST)
         input_frame_fullres = tr.to_tensor(input_frame_fullres)
         input_frame_lowres = tr.to_tensor(input_frame_lowres)
 
@@ -53,6 +53,8 @@ for input_video, output_video in zip(input_video_paths, output_video_paths):
         output_frame = output_frame.squeeze(0).cpu()
         avg_time_per_frame += (end_time - start_time) / len(input_video)
 
+        output_frame = tr.resize(output_frame, [conf.fullres, int(conf.fullres * conf.aspect_ratio)],
+                                 interpolation=Image.BICUBIC)
         output_frame = tr.to_pil_image(output_frame)
         output_frame = np.asarray(output_frame)
         output_frame = cv2.cvtColor(output_frame, cv2.COLOR_RGB2BGR)

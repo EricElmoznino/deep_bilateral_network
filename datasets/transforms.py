@@ -15,10 +15,10 @@ def random_crop(images, scale, aspect_ratio=None):
     if aspect_ratio is None:
         tw, th = int(crop_ratio * w), int(crop_ratio * h)
     else:
-        if min(w, h) == w:
-            tw, th = int(crop_ratio * w), int(crop_ratio * w * aspect_ratio)
-        else:
+        if min(w * aspect_ratio, h) == h:
             tw, th = int(crop_ratio * h / aspect_ratio), int(crop_ratio * h)
+        else:
+            tw, th = int(crop_ratio * w), int(crop_ratio * w * aspect_ratio)
     if w == tw and h == th:
         return images
     i = random.randint(0, h - th)

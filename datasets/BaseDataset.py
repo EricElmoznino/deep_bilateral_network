@@ -7,13 +7,12 @@ import datasets.transforms as tr_custom
 
 class BaseDataset(Dataset):
 
-    def __init__(self, data_dir, lowres, fullres, training=False):
+    def __init__(self, data_dir, lowres, fullres, aspect_ratio, training=False):
         super().__init__()
-        assert len(lowres) == len(fullres) == 2
-        assert lowres[0] / lowres[1] == fullres[0] / fullres[1]
-
+        assert isinstance(lowres, int) and isinstance(fullres, int)
         self.training = training
         self.lowres, self.fullres = lowres, fullres
+        self.aspect_ratio = aspect_ratio    # height/width for input
         self.data = self.read_data(data_dir)
 
     def __len__(self):
@@ -30,11 +29,11 @@ class BaseDataset(Dataset):
             image, target = tr_custom.random_horizontal_flip([image, target])
             image, target = tr_custom.random_rotation([image, target], angle=15)
             image, target = tr_custom.random_crop([image, target], scale=(0.8, 1.0),
-                                                  aspect_ratio=self.fullres[1]/self.fullres[0])
+                                                  aspect_ratio=self.aspect_ratio)
         else:
-            image, target = tr_custom.center_crop([image, target], aspect_ratio=self.fullres[1]/self.fullres[0])
-        image_fullres, target = [tr.resize(img, self.fullres) for img in [image, target]]
-        image_lowres = tr.resize(image_fullres, self.lowres, interpolation=Image.NEAREST)
+            image, target = tr_custom.center_crop([image, target], aspect_ratio=self.aspect_ratio)
+        image_fullres, target = [tr.resize(img, [self.fullres, self.fullres]) for img in [image, target]]
+        image_lowres = tr.resize(image_fullres, [self.lowres, self.lowres], interpolation=Image.NEAREST)
         image_lowres, image_fullres, target = [tr.to_tensor(img) for img in [image_lowres, image_fullres, target]]
         return image_lowres, image_fullres, target
 
