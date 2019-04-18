@@ -14,8 +14,8 @@ data_dir = 'data/debug'
 pretrained_path = None
 
 # Model parameters
-lowres = [256, 256]
-fullres = [512, 512]
+lowres = [256, 554]
+fullres = [512, 1108]
 luma_bins = 8
 spatial_bins = 16
 channel_multiplier = 1
