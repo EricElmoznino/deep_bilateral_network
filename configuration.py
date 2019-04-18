@@ -16,7 +16,7 @@ pretrained_path = None
 # Model parameters
 lowres = 256
 fullres = 512
-aspect_ratio = 2.0
+aspect_ratio = 19.5 / 9
 luma_bins = 8
 spatial_bins = 16
 channel_multiplier = 1
