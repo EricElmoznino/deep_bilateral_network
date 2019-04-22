@@ -9,7 +9,6 @@ class DeepBilateralNetCurves(nn.Module):
 
     def __init__(self, lowres, luma_bins, spatial_bin, channel_multiplier, guide_pts, norm=False, n_in=3, n_out=3):
         super().__init__()
-        assert isinstance(lowres, int)
         self.luma_bins = luma_bins
         self.spatial_bin = spatial_bin
         self.channel_multiplier = channel_multiplier
@@ -54,7 +53,7 @@ class DeepBilateralNetCurves(nn.Module):
         # splat params
         splat = []
         in_channels = self.n_in
-        for i in range(int(np.log2(lowres / self.spatial_bin))):
+        for i in range(int(np.log2(min(lowres) / self.spatial_bin))):
             splat.append(conv(in_channels, (2 ** i) * self.feature_multiplier, 3, stride=2,
                               norm=False if i == 0 else self.norm))
             in_channels = (2 ** i) * self.feature_multiplier

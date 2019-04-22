@@ -11,10 +11,11 @@ import os
 
 import configuration as conf
 
-input_video_paths = ['video_tests/input/Suji.MOV', 'video_tests/input/Vicky_1.MOV', 'video_tests/input/Vicky_2.MOV',
-                     'video_tests/input/Vicky_3.MOV']
+input_video_paths = os.listdir('video_tests/input')
+input_video_paths = [os.path.join('video_tests/input', p) for p in input_video_paths]
 output_dir = 'video_tests/output'
 
+assert conf.pretrained_path is not None
 _, _, _, model, _, _ = conf.params()
 model.eval()
 
@@ -25,7 +26,7 @@ for input_video, output_video in zip(input_video_paths, output_video_paths):
     fr = cv2.VideoCapture(input_video).get(cv2.CAP_PROP_FPS)
     input_video = skvideo.io.vread(input_video)
     output_video = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'mp4v'), fr,
-                                   (conf.fullres, int(conf.fullres * conf.aspect_ratio)))
+                                   (conf.fullres[1], conf.fullres[0]))
 
     avg_time_per_frame = 0
     for input_frame in tqdm(input_video):
@@ -33,9 +34,9 @@ for input_video, output_video in zip(input_video_paths, output_video_paths):
             break
 
         input_frame = Image.fromarray(input_frame)
-        input_frame = tr_custom.center_crop([input_frame], aspect_ratio=conf.aspect_ratio)[0]
-        input_frame_fullres = tr.resize(input_frame, [conf.fullres, conf.fullres])
-        input_frame_lowres = tr.resize(input_frame_fullres, [conf.lowres, conf.lowres], interpolation=Image.NEAREST)
+        input_frame = tr_custom.center_crop([input_frame], aspect_ratio=conf.fullres[0] / conf.fullres[1])[0]
+        input_frame_fullres = tr.resize(input_frame, conf.fullres)
+        input_frame_lowres = tr.resize(input_frame_fullres, conf.lowres, interpolation=Image.NEAREST)
         input_frame_fullres = tr.to_tensor(input_frame_fullres)
         input_frame_lowres = tr.to_tensor(input_frame_lowres)
 
@@ -54,8 +55,6 @@ for input_video, output_video in zip(input_video_paths, output_video_paths):
         avg_time_per_frame += (end_time - start_time) / len(input_video)
 
         output_frame = tr.to_pil_image(output_frame)
-        output_frame = tr.resize(output_frame, [int(conf.fullres * conf.aspect_ratio), conf.fullres],
-                                 interpolation=Image.BICUBIC)
         output_frame = np.asarray(output_frame)
         output_frame = cv2.cvtColor(output_frame, cv2.COLOR_RGB2BGR)
         output_video.write(output_frame)
