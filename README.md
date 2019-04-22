@@ -73,7 +73,7 @@ the `generate_videos.py` file.
 ### Conversion
 
 ##### CoreML
-1. Pull the following [conversion repository](https://bitbucket.org/modiface_inc/pytorch_to_coreml/src/master/).
+1. Pull the following [conversion repository](https://bitbucket.org/modiface_inc/pytorch_to_coreml/src/master/) (proprietary).
 2. Copy your trained `model.pth` file to `deep_bilateral_network/` in the conversion repository.
 3. Modify model parameters as well as input and output shapes inside the `load_model()` function of the
 `deep_bilateral_network/convert.py` file of the conversion repository.
