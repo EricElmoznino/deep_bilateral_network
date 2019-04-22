@@ -4,6 +4,7 @@ This network predicts local transformations from a low resolution input and appl
 a high resolution input in an adaptive way using a bilateral slicing layer.
 It can be thought of as a network that learns a black-box image filter.
 The main advantages of this network are:
+
 - Speed. Very shallow network, and bulk of computation done at low resolution.
 - High resolution output.
 - Edge-preserving since it learns transforms rather than output spaces directly. As such,
@@ -19,6 +20,7 @@ it is less susceptible to artifacts.
 
 ### Project structure
 The code is organized primarily into the following files and directories:
+
 - `configuration.py`: Location to specify arguments with which to train/evaluate/run.
 Global variables in this file are modified instead of specifying script command line parameters.
 - `train.py`: Script used to train on a dataset. Acquires all parameters from `configuration.py`.
@@ -39,6 +41,7 @@ well as the code needed to build it.
 ### Building the bilateral slice layer
 This model uses a custom layer with C++ implementation that must be built
 prior to training/running the model.
+
 1. `cd bilateral_slice_op`
 2. `python setup.py install`
 
@@ -51,11 +54,11 @@ and that you have successfully built the bilateral slice layer.
 the global variables defined near the top of the file.
 3. `python train.py [run_name]`
 4. For viewing the learning curve and all evaluation results should using TensorBoard
-    ```
-    tensorboard --logdir=saved_model/[run_name]
-    ```
-    And then open the port to see the evaluation results.
-    If don't know how to use tensorboard, can check  [Tensorboard](https://www.tensorflow.org/guide/summaries_and_tensorboard).
+```
+tensorboard --logdir=saved_model/[run_name]
+```
+And then open the port to see the evaluation results.
+If don't know how to use tensorboard, can check  [Tensorboard](https://www.tensorflow.org/guide/summaries_and_tensorboard).
 
 ### Evaluating
 1. Specify the model parameters in `configuration.py` by modifying
@@ -80,6 +83,7 @@ the `generate_videos.py` file.
 4. Follow the conversion repository instructions for running the conversion script.
 
 \* Notes:
+
 - The converted model does not include the final output following the bilateral slice
 layer at this time. This is because we have yet to write a custom CoreML layer.
 Instead, both the coefficients and guidemap are returned.
