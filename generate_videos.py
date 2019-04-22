@@ -8,12 +8,13 @@ import numpy as np
 import skvideo.io
 import cv2
 import os
-
 import configuration as conf
 
-input_video_paths = os.listdir('video_tests/input')
-input_video_paths = [os.path.join('video_tests/input', p) for p in input_video_paths]
+input_dir = 'video_tests/input'
 output_dir = 'video_tests/output'
+
+input_video_paths = os.listdir(input_dir)
+input_video_paths = [os.path.join(input_dir, p) for p in input_video_paths]
 
 assert conf.pretrained_path is not None
 _, _, _, model, _, _ = conf.params()
