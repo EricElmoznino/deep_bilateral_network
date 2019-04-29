@@ -8,7 +8,7 @@ from datasets.BaseDataset import BaseDataset
 import utils
 
 # Class choice parameters
-model_class = 'Curves'
+model_class = 'NN'
 dataset_class = 'Base'
 data_dir = 'data/hair_blended'
 pretrained_path = None
@@ -19,7 +19,7 @@ fullres = [512, 512]
 luma_bins = 8
 spatial_bins = 16
 channel_multiplier = 1
-guide_pts = 32
+guide_pts = 16
 
 # Training parameters
 n_epochs = 100
