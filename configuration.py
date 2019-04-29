@@ -14,9 +14,9 @@ data_dir = 'data/hair_blended'
 pretrained_path = None
 
 # Model parameters
-lowres = [364, 256]
-fullres = [728, 512]
-luma_bins = 8
+lowres = [256, 256]
+fullres = [512, 512]
+luma_bins = 16
 spatial_bins = 16
 channel_multiplier = 1
 guide_pts = 16
