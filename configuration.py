@@ -16,10 +16,10 @@ pretrained_path = None
 # Model parameters
 lowres = [256, 256]
 fullres = [512, 512]
-luma_bins = 16
+luma_bins = 8
 spatial_bins = 16
 channel_multiplier = 1
-guide_pts = 16
+guide_pts = 32
 
 # Training parameters
 n_epochs = 100
