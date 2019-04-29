@@ -39,12 +39,12 @@ This model uses a custom layer with C++ implementation that must be built prior 
 
 ### Evaluating
 1. Specify the model parameters in `configuration.py` by modifying the global variables defined near the top of the file.
-2. `python eval.py [run_name]`
+2. `python eval.py`
 
 ### Generating videos
 1. Specify the model parameters in `configuration.py` by modifying the global variables defined near the top of the file. Note that the variable `pretrained_path` must specify the path to a `.pth` model file.
 2. Specify the `input_dir` and `output_dir` global variables at the top of the `generate_videos.py` file.
-2. `python generate_videos.py`
+3. `python generate_videos.py`
 
 ### Conversion
 

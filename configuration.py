@@ -10,12 +10,12 @@ import utils
 # Class choice parameters
 model_class = 'Curves'
 dataset_class = 'Base'
-data_dir = 'data/debug'
+data_dir = 'data/hair_blended'
 pretrained_path = None
 
 # Model parameters
-lowres = [256, 256]
-fullres = [512, 512]
+lowres = [364, 256]
+fullres = [728, 512]
 luma_bins = 8
 spatial_bins = 16
 channel_multiplier = 1
