@@ -17,7 +17,7 @@ pretrained_path = None
 lowres = [256, 256]
 fullres = [512, 512]
 luma_bins = 8
-spatial_bins = 16
+spatial_bins = 64
 channel_multiplier = 1
 guide_pts = 16
 

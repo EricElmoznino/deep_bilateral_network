@@ -53,10 +53,15 @@ class DeepBilateralNetCurves(nn.Module):
         # splat params
         splat = []
         in_channels = self.n_in
-        for i in range(int(np.log2(min(lowres) / self.spatial_bin))):
-            splat.append(conv(in_channels, (2 ** i) * self.feature_multiplier, 3, stride=2,
-                              norm=False if i == 0 else self.norm))
-            in_channels = (2 ** i) * self.feature_multiplier
+        num_downsamples = int(np.log2(min(lowres) / self.spatial_bin))
+        extra_convs = max(0, int(np.log2(self.spatial_bin) - np.log2(16)))
+        extra_convs = np.linspace(0, num_downsamples - 1, extra_convs, dtype=np.int).tolist()
+        for i in range(num_downsamples):
+            out_channels = (2 ** i) * self.feature_multiplier
+            splat.append(conv(in_channels, out_channels, 3, stride=2, norm=False if i == 0 else self.norm))
+            if i in extra_convs:
+                splat.append(conv(out_channels, out_channels, 3, norm=self.norm))
+            in_channels = out_channels
         splat = nn.Sequential(*splat)
         splat_channels = in_channels
 
