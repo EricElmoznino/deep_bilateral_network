@@ -8,7 +8,7 @@ from datasets.BaseDataset import BaseDataset
 import utils
 
 # Class choice parameters
-model_class = 'NN'
+model_class = 'Curves'
 dataset_class = 'Base'
 data_dir = 'data/hair_blended'
 pretrained_path = None
