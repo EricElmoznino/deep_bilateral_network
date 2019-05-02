@@ -14,12 +14,12 @@ data_dir = 'data/hair_blended'
 pretrained_path = None
 
 # Model parameters
-lowres = [128, 128]
+lowres = [256, 256]
 fullres = [512, 512]
 luma_bins = 4
-spatial_bins = 16
+spatial_bins = 64
 channel_multiplier = 1
-guide_pts = 16
+guide_pts = 4
 
 # Training parameters
 n_epochs = 100
