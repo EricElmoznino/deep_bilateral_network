@@ -5,6 +5,14 @@ import numpy as np
 from models.layers import conv, fc, BilateralSliceFunction
 
 
+def blend(mat):
+    from scipy.ndimage import gaussian_filter
+    mat = mat.cpu().numpy()
+    mat = gaussian_filter(mat, sigma=[0.0, 0.0, 0.0, 1.0, 1.0])
+    mat = torch.from_numpy(mat)
+    return mat
+
+
 class DeepBilateralNetCurves(nn.Module):
 
     def __init__(self, lowres, luma_bins, spatial_bin, channel_multiplier, guide_pts, norm=False, n_in=3, n_out=3):
@@ -22,6 +30,8 @@ class DeepBilateralNetCurves(nn.Module):
 
     def forward(self, image_lowres, image_fullres):
         coefficients = self.forward_coefficients(image_lowres)
+        if not self.training:
+            coefficients = blend(coefficients)
         guidemap = self.forward_guidemap(image_fullres)
         output = BilateralSliceFunction.apply(coefficients, guidemap, image_fullres, True)
         if not self.training:
