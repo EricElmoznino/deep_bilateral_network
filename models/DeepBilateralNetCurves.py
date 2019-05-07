@@ -22,6 +22,7 @@ class DeepBilateralNetCurves(nn.Module):
 
     def forward(self, image_lowres, image_fullres):
         coefficients = self.forward_coefficients(image_lowres)
+        coefficients = self.iterative_upsample(coefficients, image_fullres.shape[2:4])
         guidemap = self.forward_guidemap(image_fullres)
         output = BilateralSliceFunction.apply(coefficients, guidemap, image_fullres, True)
         if not self.training:
@@ -120,3 +121,12 @@ class DeepBilateralNetCurves(nn.Module):
         guide_params.slopes = slopes
         guide_params.projection = projection
         return guide_params
+
+    def iterative_upsample(self, coefficients, fullres):
+        res = self.spatial_bin
+        coefficients = coefficients.view(coefficients.shape[0], -1, res, res)
+        while res * 2 < min(fullres):
+            res *= 2
+            coefficients = F.upsample(coefficients, size=[res, res], mode='bilinear')
+        coefficients = coefficients.view(coefficients.shape[0], -1, self.luma_bins, res, res)
+        return coefficients
