@@ -15,9 +15,9 @@ pretrained_path = None
 
 # Model parameters
 lowres = [256, 256]
-fullres = [512, 512]
+fullres = [1024, 1024]
 luma_bins = 4
-spatial_bins = 64
+spatial_bins = 16
 channel_multiplier = 1
 guide_pts = 4
 
