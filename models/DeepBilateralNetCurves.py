@@ -7,7 +7,8 @@ from models.layers import conv, fc, BilateralSliceFunction
 
 class DeepBilateralNetCurves(nn.Module):
 
-    def __init__(self, lowres, luma_bins, spatial_bin, channel_multiplier, guide_pts, norm=False, n_in=3, n_out=3):
+    def __init__(self, lowres, luma_bins, spatial_bin, channel_multiplier, guide_pts, norm=False, n_in=3, n_out=3,
+                 iteratively_upsample=False):
         super().__init__()
         self.luma_bins = luma_bins
         self.spatial_bin = spatial_bin
@@ -16,13 +17,15 @@ class DeepBilateralNetCurves(nn.Module):
         self.guide_pts = guide_pts
         self.norm = norm
         self.n_in, self.n_out = n_in, n_out
+        self.iteratively_upsample = iteratively_upsample
 
         self.coefficient_params = self.make_coefficient_params(lowres)
         self.guide_params = self.make_guide_params()
 
     def forward(self, image_lowres, image_fullres):
         coefficients = self.forward_coefficients(image_lowres)
-        coefficients = self.iterative_upsample(coefficients, image_fullres.shape[2:4])
+        if self.iteratively_upsample:
+            coefficients = self.iterative_upsample(coefficients, image_fullres.shape[2:4])
         guidemap = self.forward_guidemap(image_fullres)
         output = BilateralSliceFunction.apply(coefficients, guidemap, image_fullres, True)
         if not self.training:
